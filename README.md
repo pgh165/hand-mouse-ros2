@@ -25,18 +25,16 @@ hand_detection_node  (MediaPipe)
 ## 패키지 구조
 
 ```
-src/
-├── jiho_media/              # 핵심 패키지 (ament_cmake)
-│   ├── msg/
-│   │   ├── Landmark.msg         # x, y, z (정규화 좌표)
-│   │   └── HandLandmarks.msg    # 헤더 + 손 개수 + 랜드마크 배열
-│   └── scripts/
-│       ├── hand_detection_node.py   # MediaPipe → ROS 2 퍼블리셔
-│       ├── hand_mouse_node.py       # ROS 2 → 마우스 제어
-│       ├── image_viewer.py          # 시각화 뷰어
-│       ├── run_hand_mouse.sh        # 노드별 개별 실행 스크립트
-│       └── start_hand_mouse.sh     # 전체 한 번에 실행 스크립트
-└── jiho1/                   # 기본 ROS 2 패키지 (연습용)
+jiho_media/
+├── msg/
+│   ├── Landmark.msg         # x, y, z (정규화 좌표)
+│   └── HandLandmarks.msg    # 헤더 + 손 개수 + 랜드마크 배열
+└── scripts/
+    ├── hand_detection_node.py   # MediaPipe → ROS 2 퍼블리셔
+    ├── hand_mouse_node.py       # ROS 2 → 마우스 제어
+    ├── image_viewer.py          # 시각화 뷰어
+    ├── run_hand_mouse.sh        # 노드별 개별 실행
+    └── start_hand_mouse.sh     # 전체 한 번에 실행
 ```
 
 ## 제스처
@@ -54,7 +52,7 @@ src/
 ## 의존성
 
 ### ROS 2
-- ROS 2 Humble (또는 이후 버전)
+- ROS 2 Humble 이상
 - `rclpy`, `std_msgs`, `sensor_msgs`
 
 ### Python
@@ -120,18 +118,17 @@ float32 z  # 손목 기준 깊이 (음수 = 카메라에 가까움)
 ```
 std_msgs/Header header
 uint8 num_hands          # 감지된 손 개수 (0~2)
-string[] handedness      # 손 방향: "Left" 또는 "Right"
+string[] handedness      # "Left" 또는 "Right"
 Landmark[] landmarks     # 손당 21개, row-major 순서
 ```
 
 ## 동작 원리
 
 1. **손 감지**: MediaPipe HandLandmarker (VIDEO 모드, float16)로 21개 관절 좌표 추출
-2. **손등 판별**: 손목·검지 MCP·소지 MCP의 외적(cross product) z값으로 손바닥/손등 구분
-3. **커서 이동**: 중지 MCP(9번 랜드마크)의 프레임 간 이동 벡트를 지수이동평균으로 스무딩 후 uinput REL_X/REL_Y 이벤트 전송
-4. **핀치 감지**: 엄지(4번)↔검지(8번) 정규화 거리 < 0.06 → 좌클릭/드래그  
-   엄지(4번)↔중지(12번) 정규화 거리 < 0.06 → 우클릭
-5. **드래그 판단**: 핀치 상태에서 커서가 30픽셀 이상 이동 시 BTN_LEFT press, 릴리즈 시 release
+2. **손등 판별**: 손목·검지 MCP·소지 MCP의 외적 z값으로 손바닥/손등 구분
+3. **커서 이동**: 중지 MCP(9번) 프레임 간 이동량을 지수이동평균으로 스무딩 후 uinput REL_X/Y 이벤트 전송
+4. **핀치 감지**: 엄지↔검지 정규화 거리 < 0.06 → 좌클릭/드래그 / 엄지↔중지 < 0.06 → 우클릭
+5. **드래그 판단**: 핀치 상태에서 커서 30px 이상 이동 시 BTN_LEFT press, 릴리즈 시 release
 
 ## 라이선스
 
