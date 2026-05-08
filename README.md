@@ -5,21 +5,26 @@ MediaPipe HandLandmarker로 손 관절 21개를 인식하고, evdev uinput으로
 
 ## 시스템 구성
 
-```
-카메라
-  │
-  ▼
-hand_detection_node  (MediaPipe)
-  ├─► /hand_landmarks           (HandLandmarks 커스텀 메시지)
-  └─► /hand_image/compressed    (JPEG 카메라 피드)
-          │
-          ▼
-    hand_mouse_node  (evdev uinput)
-      ├─► 마우스 이동 / 클릭 / 드래그
-      └─► /hand_mouse/image/compressed  (상태 오버레이)
-                  │
-                  ▼
-          image_viewer  (OpenCV 창)
+```mermaid
+flowchart TD
+    CAM[📷 카메라]
+
+    subgraph DET["hand_detection_node (MediaPipe)"]
+        MP[HandLandmarker\nfloat16 / VIDEO mode]
+    end
+
+    subgraph MOUSE["hand_mouse_node (evdev uinput)"]
+        CTL[제스처 인식\n커서 이동 · 클릭 · 드래그]
+    end
+
+    VIEW[🖥️ image_viewer\nOpenCV 창]
+    HW[🖱️ 마우스 이벤트\n이동 / 좌클릭 / 우클릭 / 드래그]
+
+    CAM --> DET
+    DET -->|/hand_landmarks\nHandLandmarks msg| MOUSE
+    DET -->|/hand_image/compressed\nJPEG 카메라 피드| MOUSE
+    MOUSE -->|/hand_mouse/image/compressed\n상태 오버레이| VIEW
+    MOUSE -->|uinput REL_X·Y\nBTN_LEFT·RIGHT| HW
 ```
 
 ## 패키지 구조
